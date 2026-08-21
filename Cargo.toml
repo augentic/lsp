@@ -1,5 +1,5 @@
 [workspace]
-members = ["augentic_style", "augentic_omnia"]
+members = ["style", "omnia"]
 resolver = "3"
 
 [workspace.package]
@@ -12,7 +12,7 @@ repository = "https://github.com/augentic/lints"
 [workspace.dependencies]
 # The clippy_utils rev and the rust-toolchain.toml nightly move together;
 # both come from the dylint release we track (see README § Toolchain).
-clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "9fca3bc9fc2bc83c60bde26d18ed68f11564b228" }
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy"}
 dylint_linting = "6.0"
 dylint_testing = "6.0"
 serde = { version = "1", features = ["derive"] }
