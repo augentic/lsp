@@ -1,45 +1,18 @@
-[package]
-name = "omnia-lint"
+[workspace]
+members = ["crates/*"]
+resolver = "3"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-description = "Custom lints for Omnia handler development"
-authors = ["Augentic"]
 license = "MIT"
-readme = "README.md"
-keywords = ["linter", "wasm", "omnia", "rust-analyzer"]
-categories = ["development-tools", "wasm"]
+authors = ["Augentic"]
+repository = "https://github.com/augentic/lints"
 
-[[bin]]
-name = "omnia-lint"
-path = "src/main.rs"
-
-[lib]
-name = "omnia_lint"
-path = "src/lib.rs"
-
-[dependencies]
-clap = { version = "4.5.60", features = ["derive"] }
-regex = "1.12.3"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
-toml = "0.9.8"
-anyhow = "1.0.102"
-thiserror = "2.0.18"
-walkdir = "2.5.0"
-colored = "3.1.1"
-rayon = "1.11.0"
-syn = { version = "2", features = ["full", "visit"] }
-proc-macro2 = { version = "1", features = ["span-locations"] }
-
-
-[dev-dependencies]
-bytes = "1.11"
-http = "1.4"
-http-body-util = "0.1"
-omnia-sdk = "0.28.0"
-tempfile = "3.26.0"
-
-[profile.release]
-lto = true
-codegen-units = 1
-strip = true
+[workspace.dependencies]
+# The clippy_utils rev and the rust-toolchain.toml nightly move together;
+# both come from the dylint release we track (see README § Toolchain).
+clippy_utils = { git = "https://github.com/rust-lang/rust-clippy", rev = "9fca3bc9fc2bc83c60bde26d18ed68f11564b228" }
+dylint_linting = "6.0"
+dylint_testing = "6.0"
+serde = { version = "1", features = ["derive"] }

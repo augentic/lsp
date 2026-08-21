@@ -1,0 +1,19 @@
+error: `StateStore::put` is used without a `StateStore` bound on this `Handler` impl
+  --> $DIR/missing_provider_bound.rs:24:18
+   |
+LL |         provider.put("k", b"v");
+   |                  ^^^
+   |
+   = help: declare the bound so the capability contract is explicit
+   = note: `#[deny(missing_provider_bound)]` on by default
+
+error: `Config::get` is used without a `Config` bound on this `Handler` impl
+  --> $DIR/missing_provider_bound.rs:25:26
+   |
+LL |         let _ = provider.get("k");
+   |                          ^^^
+   |
+   = help: declare the bound so the capability contract is explicit
+
+error: aborting due to 2 previous errors
+
