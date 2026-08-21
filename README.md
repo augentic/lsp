@@ -2,8 +2,8 @@
 
 House lints for Augentic repositories, shipped as [Dylint](https://github.com/trailofbits/dylint) libraries. Two libraries live here:
 
-- **`augentic_style`** — the house prose budgets: identifier length, module/item doc caps, `//` run caps, and the historical-phrase ban.
-- **`augentic_omnia`** — typed `Handler`/provider-bound analysis for [Omnia](https://github.com/augentic/omnia) applications. Silent in crates with no `Handler` impls and no provider-bounded helpers.
+- **`style`** — the house prose budgets: identifier length, module/item doc caps, `//` run caps, and the historical-phrase ban.
+- **`omnia`** — typed `Handler`/provider-bound analysis for [Omnia](https://github.com/augentic/omnia) applications. Silent in crates with no `Handler` impls and no provider-bounded helpers.
 
 All lints land `Deny` by default. New noisy lints start `Allow` and promote.
 
@@ -19,7 +19,7 @@ Add to the consuming workspace's root `Cargo.toml`:
 
 ```toml
 [workspace.metadata.dylint]
-libraries = [{ git = "https://github.com/augentic/lints", branch = "main", pattern = "augentic_*" }]
+libraries = [{ git = "https://github.com/augentic/lints", branch = "main", pattern = "crates/*" }]
 
 [workspace.lints.rust.unexpected_cfgs]
 level = "warn"
@@ -32,14 +32,14 @@ Then run:
 cargo dylint --all --workspace
 ```
 
-Dylint builds the libraries with this repository's pinned nightly and runs them through its own driver; the consuming workspace stays on its own (stable) toolchain for everything else. That one metadata entry is the whole adoption for an Omnia application: crates with `Handler` impls get the `augentic_omnia` analysis for free, and everything gets the style budgets.
+Dylint builds the libraries with this repository's pinned nightly and runs them through its own driver; the consuming workspace stays on its own (stable) toolchain for everything else. That one metadata entry is the whole adoption for an Omnia application: crates with `Handler` impls get the `omnia` analysis for free, and everything gets the style budgets.
 
 ## Configuration
 
 Caps and trait names are read from the consuming workspace's root `dylint.toml`. The defaults:
 
 ```toml
-[augentic_style]
+[style]
 ident-length = 25
 module-doc = 3
 item-doc-overview = 8
@@ -53,14 +53,14 @@ historical-phrases = [
   "to avoid the",
 ]
 
-[augentic_omnia]
+[omnia]
 handler = "Handler"
 providers = ["Config", "HttpRequest", "Publisher", "StateStore", "Identity", "TableStore"]
 ```
 
 ## The lints
 
-### `augentic_style`
+### `style`
 
 | Lint | Pass | What it does |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ providers = ["Config", "HttpRequest", "Publisher", "StateStore", "Identity", "Ta
 | `line_comment_run` | SourceMap | More than `line-comment-run` consecutive non-blank `//` lines. |
 | `historical_comment` | SourceMap + docs | Comment or doc text matching a configured historical phrase — archaeology belongs in git. |
 
-### `augentic_omnia`
+### `omnia`
 
 | Lint | Pass | What it does |
 | --- | --- | --- |
@@ -82,7 +82,7 @@ providers = ["Config", "HttpRequest", "Publisher", "StateStore", "Identity", "Ta
 Lint names are bare (no tool namespace). Under stock builds the `dylint_lib` cfg is unset, so gate suppressions:
 
 ```rust
-#[cfg_attr(dylint_lib = "augentic_style", allow(ident_length))]
+#[cfg_attr(dylint_lib = "style", allow(ident_length))]
 fn a_name_the_cap_would_reject_but_the_wire_format_requires() {}
 ```
 
@@ -128,8 +128,8 @@ rust-analyzer can run the house lints on save; it is slower than stock clippy-on
 ```bash
 cargo make check   # fmt, clippy, tests (including UI tests)
 cargo make ci      # the full gate: fmt --check, clippy, tests, cargo deny
-cargo test -p augentic_style   # one library's UI suite
-cargo dylint list --path . --pattern 'augentic_*'   # the libraries and lints Dylint can see
+cargo test -p style   # one library's UI suite
+cargo dylint list --path . --pattern 'crates/*'   # the libraries and lints Dylint can see
 ```
 
 UI fixtures live in each library's `ui/` directory with committed `.stderr` files.

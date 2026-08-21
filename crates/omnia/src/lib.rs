@@ -1,6 +1,6 @@
 //! Typed `Handler`/provider-bound lints for Omnia applications as a
 //! Dylint library. Trait names are configured in the linted workspace's
-//! `dylint.toml` under `[augentic_omnia]`.
+//! `dylint.toml` under `[omnia]`.
 
 #![feature(rustc_private)]
 #![warn(unused_extern_crates)]

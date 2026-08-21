@@ -1,5 +1,5 @@
 [workspace]
-members = ["augentic_style", "augentic_omnia"]
+members = ["crates/*"]
 resolver = "3"
 
 [workspace.package]

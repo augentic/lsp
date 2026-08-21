@@ -1,6 +1,6 @@
 //! Augentic house prose budgets as a Dylint library. Caps and the
 //! phrase list are configured in the linted workspace's `dylint.toml`
-//! under `[augentic_style]`.
+//! under `[style]`.
 
 #![feature(rustc_private)]
 #![warn(unused_extern_crates)]

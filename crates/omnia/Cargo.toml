@@ -1,5 +1,5 @@
 [package]
-name = "augentic_omnia"
+name = "omnia"
 description = "Typed Handler/provider-bound lints for Omnia applications"
 version.workspace = true
 edition.workspace = true

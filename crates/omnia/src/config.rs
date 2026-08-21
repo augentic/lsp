@@ -1,5 +1,5 @@
 //! Handler and provider trait names, read from the linted workspace's
-//! `dylint.toml` under the `[augentic_omnia]` table.
+//! `dylint.toml` under the `[omnia]` table.
 
 #[derive(Clone, serde::Deserialize)]
 #[serde(default, rename_all = "kebab-case")]

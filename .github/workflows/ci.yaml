@@ -28,7 +28,7 @@ jobs:
         run: cargo test --workspace
 
       - name: Lint discovery
-        run: cargo dylint list --path . --pattern 'augentic_*'
+        run: cargo dylint list --path . --pattern 'crates/*'
 
       - name: Deny
         uses: EmbarkStudios/cargo-deny-action@v2

@@ -1,5 +1,5 @@
 //! Caps and phrase list, read from the linted workspace's `dylint.toml`
-//! under the `[augentic_style]` table.
+//! under the `[style]` table.
 
 #[derive(Clone, serde::Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
