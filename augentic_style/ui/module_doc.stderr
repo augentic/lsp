@@ -1,0 +1,14 @@
+error: module doc (`//!`) runs 4 prose lines (cap 3)
+  --> $DIR/module_doc.rs:1:1
+   |
+LL | / //! Line one of a module doc that overruns the cap.
+LL | | //! Line two keeps going.
+LL | | //! Line three keeps going.
+LL | | //! Line four is one over the default cap of three.
+   | |___________________________________________________^
+   |
+   = help: keep the overview short; move depth into g$DIRdes
+   = note: `#[deny(module_doc)]` on by default
+
+error: aborting due to 1 previous error
+

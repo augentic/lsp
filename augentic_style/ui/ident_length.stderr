@@ -1,0 +1,43 @@
+error: `this_declared_name_is_far_too_long` is 34 chars (cap 25)
+  --> $DIR/ident_length.rs:6:4
+   |
+LL | fn this_declared_name_is_far_too_long(
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: shorten the declared name
+   = note: `#[deny(ident_length)]` on by default
+
+error: `a_field_name_that_is_too_long` is 29 chars (cap 25)
+  --> $DIR/ident_length.rs:13:5
+   |
+LL |     a_field_name_that_is_too_long: u32,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: shorten the declared name
+
+error: `AVariantNameThatIsMuchTooLong` is 29 chars (cap 25)
+  --> $DIR/ident_length.rs:18:5
+   |
+LL |     AVariantNameThatIsMuchTooLong,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: shorten the declared name
+
+error: `an_associated_name_that_is_too_long` is 35 chars (cap 25)
+  --> $DIR/ident_length.rs:22:8
+   |
+LL |     fn an_associated_name_that_is_too_long(&self);
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: shorten the declared name
+
+error: `an_associated_name_that_is_too_long` is 35 chars (cap 25)
+  --> $DIR/ident_length.rs:26:8
+   |
+LL |     fn an_associated_name_that_is_too_long(&self) {}
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: shorten the declared name
+
+error: aborting due to 5 previous errors
+

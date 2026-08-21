@@ -1,0 +1,19 @@
+error: provider bound `StateStore` is never used by this `Handler` impl
+  --> $DIR/unused_provider_bound.rs:15:18
+   |
+LL | impl<P: Config + StateStore> Handler<P> for Direct {
+   |                  ^^^^^^^^^^
+   |
+   = help: drop the bound, or delete the dead provider call path
+   = note: `#[deny(unused_provider_bound)]` on by default
+
+error: provider bound `Config` is never used by this function
+  --> $DIR/unused_provider_bound.rs:35:26
+   |
+LL | fn helper_with_unused<P: Config + Publisher>(provider: &P) {
+   |                          ^^^^^^
+   |
+   = help: drop the bound, or delete the dead provider call path
+
+error: aborting due to 2 previous errors
+

@@ -1,0 +1,13 @@
+error: line comment (`//`) run of 4 non-blank lines (cap 3)
+  --> $DIR/line_comment_run.rs:2:5
+   |
+LL | /     // Line one of a comment run.
+...  |
+LL | |     // Line four is one over the default cap of three.
+   | |______________________________________________________^
+   |
+   = help: tighten the comment, or promote it to a doc comment
+   = note: `#[deny(line_comment_run)]` on by default
+
+error: aborting due to 1 previous error
+

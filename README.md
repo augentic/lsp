@@ -1,250 +1,135 @@
-# Omnia Lint
+# Augentic lints
 
-A custom Rust linter for [Omnia](https://github.com/augentic/omnia) WASM32 handler development. It enforces WASI component constraints, validates `Handler` trait implementations, detects forbidden crates/APIs, and checks provider trait bounds -- including transitive usage through function delegation.
+House lints for Augentic repositories, shipped as [Dylint](https://github.com/trailofbits/dylint) libraries. Two libraries live here:
 
-## Why
+- **`augentic_style`** — the house prose budgets: identifier length, module/item doc caps, `//` run caps, and the historical-phrase ban.
+- **`augentic_omnia`** — typed `Handler`/provider-bound analysis for [Omnia](https://github.com/augentic/omnia) applications. Silent in crates with no `Handler` impls and no provider-bounded helpers.
 
-Omnia handlers compile to `wasm32-wasip2` and run inside a sandboxed runtime. Standard Rust patterns that work on native targets (filesystem access, threading, direct HTTP clients, global mutable state) will either fail to compile or panic at runtime in this environment. This linter catches those issues at development time, before they reach CI or production.
+All lints land `Deny` by default. New noisy lints start `Allow` and promote.
 
-## Install
+## Adoption
+
+Install the tools once:
 
 ```bash
-cargo install --path .
+cargo install cargo-dylint dylint-link
 ```
 
-Or add as a dev-dependency for programmatic use:
+Add to the consuming workspace's root `Cargo.toml`:
 
 ```toml
-[dev-dependencies]
-omnia-lint = { path = "../lints" }
+[workspace.metadata.dylint]
+libraries = [{ git = "https://github.com/augentic/lints", branch = "main", pattern = "augentic_*" }]
+
+[workspace.lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = ["cfg(dylint_lib, values(any()))"]
 ```
 
-## Quick Start
+Then run:
 
 ```bash
-# Lint a directory
-omnia-lint src/
-
-# Lint specific files
-omnia-lint src/handler.rs src/routes.rs
-
-# Show only errors and warnings (skip info/hint)
-omnia-lint src/ --severity warning
-
-# JSON output for tooling
-omnia-lint src/ --format json
-
-# GitHub Actions annotations
-omnia-lint src/ --format github --error-on-warnings
+cargo dylint --all --workspace
 ```
 
-## What It Checks
-
-### Forbidden Crates (~35 crates)
-
-Crates that are incompatible with WASM32 are flagged on `use` or `extern crate`:
-
-| Category | Crates | Alternative |
-|----------|--------|-------------|
-| HTTP clients | `reqwest`, `hyper`, `surf`, `ureq` | `HttpRequest` provider trait |
-| Async runtimes | `tokio`, `async-std`, `smol` | WASI provides the executor |
-| Databases | `sqlx`, `diesel`, `postgres`, `mysql` | `TableStore` provider trait |
-| Redis/caching | `redis`, `fred` | `StateStore` provider trait |
-| Messaging | `rdkafka`, `lapin` | `Publish` provider trait |
-| Parallelism | `rayon`, `crossbeam` | Sequential iterators (WASM is single-threaded) |
-| Global state | `once_cell`, `lazy_static` | `Config` provider trait |
-
-### Forbidden Patterns (11 patterns)
-
-Source patterns that won't work or are dangerous in WASM32:
-
-- `static mut`, `OnceCell`, `LazyLock` -- global mutable state
-- `std::fs`, `std::net`, `std::thread`, `std::process`, `std::env` -- unavailable APIs
-- `SystemTime::now()`, `thread::sleep` -- unreliable or unavailable
-- `println!`, `eprintln!`, `dbg!` -- use `tracing` instead
-
-### Regex-Based Rules (51 rules across 13 categories)
-
-| Category | What it checks |
-|----------|---------------|
-| Handler | Generic parameter `P`, async `handle`, `Context<'_, P>` lifetime |
-| Provider | Hardcoded config, direct HTTP clients, too many bounds |
-| Error | `unwrap`/`expect`/`panic!`/`assert!`, missing `.context()`, wrong error mapping |
-| Wasm | `std::fs`/`net`/`thread`/`env`/`process`, 64/128-bit integers, `isize`/`usize` in APIs |
-| Stateless | `static mut`, `lazy_static`, `OnceCell`, `Arc<Mutex>` |
-| Performance | Clone in loop, string concatenation, `collect().len()`, unbounded queries |
-| Security | Hardcoded secrets, SQL string concatenation |
-| Strong Typing | Raw `String` IDs, string matching instead of enums, raw `f64` coordinates |
-| Time | `SystemTime::now()`, `Instant::now().elapsed()` |
-| Auth | Hardcoded bearer tokens |
-| Caching | `StateStore::set` without TTL |
-
-### Semantic Analysis (syn-based AST parsing)
-
-The linter parses source files with `syn` to perform deep structural analysis:
-
-- **Unused provider bounds** -- traits declared on `impl<P: Config + HttpRequest>` but never called in the handler body
-- **Missing provider bounds** -- traits used (e.g. `ctx.provider.fetch(...)`) but not declared in bounds
-- **Transitive trait detection** -- if a handler calls `fetch_data(provider)` which requires `HttpRequest`, the bound is traced through the call chain
-- **Handler missing bounds** -- `impl<P> Handler<P>` with no provider traits specified
-- **Helper function bounds** -- the same unused/missing analysis applied to standalone `async fn` helpers
-
-The analyzer also runs regex-based checks for:
-- `Config::get` without `?` or error handling
-- `StateStore::set` with `None` TTL
-- `HttpRequest::fetch` without `.context()`
+Dylint builds the libraries with this repository's pinned nightly and runs them through its own driver; the consuming workspace stays on its own (stable) toolchain for everything else. That one metadata entry is the whole adoption for an Omnia application: crates with `Handler` impls get the `augentic_omnia` analysis for free, and everything gets the style budgets.
 
 ## Configuration
 
-### Cargo.toml
-
-Configure severity overrides in `[lints.omnia]` or `[workspace.lints.omnia]`, following the same convention as `clippy`:
+Caps and trait names are read from the consuming workspace's root `dylint.toml`. The defaults:
 
 ```toml
-[workspace.lints.omnia]
-all = "warn"
+[augentic_style]
+ident-length = 25
+module-doc = 3
+item-doc-overview = 8
+line-comment-run = 3
+historical-phrases = [
+  "Phase ",
+  "formerly",
+  "previously lived",
+  "old contract",
+  "former tests",
+  "to avoid the",
+]
 
-handler  = "deny"
-wasm     = "deny"
-security = "forbid"
-
-error_generic_unwrap = "allow"
-perf_clone_in_loop   = "allow"
+[augentic_omnia]
+handler = "Handler"
+providers = ["Config", "HttpRequest", "Publisher", "StateStore", "Identity", "TableStore"]
 ```
 
-Levels: `allow` (suppress), `warn`, `deny` (error), `forbid` (error, cannot be overridden).
+## The lints
 
-### Inline Suppression
+### `augentic_style`
 
-Suppress diagnostics with `#[omnia::allow(...)]`, similar to `#[allow(clippy::...)]`:
+| Lint | Pass | What it does |
+| --- | --- | --- |
+| `ident_length` | Early | Declared item, field, and variant names longer than `ident-length` Unicode scalars (bare identifier, not the path). |
+| `module_doc` | Early | Module `//!` prose longer than `module-doc` non-blank lines. Fenced code is exempt. |
+| `item_doc_overview` | Early | Item `///` overview longer than `item-doc-overview` lines before the first `#` heading. Fences exempt; `# Errors` / `# Panics` bodies do not count. |
+| `line_comment_run` | SourceMap | More than `line-comment-run` consecutive non-blank `//` lines. |
+| `historical_comment` | SourceMap + docs | Comment or doc text matching a configured historical phrase — archaeology belongs in git. |
+
+### `augentic_omnia`
+
+| Lint | Pass | What it does |
+| --- | --- | --- |
+| `unused_provider_bound` | Late | Provider trait bound declared on a `Handler` impl or helper and never used by any call path. Typed: `Config::get` is not `StateStore::get`. |
+| `missing_provider_bound` | Late | Provider method used (for example through a concrete provider type) without the matching bound; walks local helper functions. |
+
+## Suppression
+
+Lint names are bare (no tool namespace). Under stock builds the `dylint_lib` cfg is unset, so gate suppressions:
 
 ```rust
-// Suppress a specific rule for the next item
-#[omnia::allow(error_generic_unwrap)]
-fn parse_config(input: &str) -> Config {
-    serde_json::from_str(input).unwrap() // no warning
-}
-
-// Suppress all omnia rules for the next item
-#[omnia::allow(all)]
-fn legacy_handler() { /* ... */ }
-
-// File-level suppression (inner attribute)
-#![omnia::allow(println_debug)]
+#[cfg_attr(dylint_lib = "augentic_style", allow(ident_length))]
+fn a_name_the_cap_would_reject_but_the_wire_format_requires() {}
 ```
 
-### CLI Options
+Suppressions should stay near zero; fix the finding instead.
 
-```
-omnia-lint [OPTIONS] <PATHS>...
+## The wasm deny-list (stock Clippy, not a library)
 
-Options:
-  -f, --format <FORMAT>        pretty | json | compact | github [default: pretty]
-  -s, --severity <SEVERITY>    error | warning | info | hint [default: hint]
-  -c, --categories <CATS>      Comma-separated category filter
-      --disable <RULES>        Comma-separated rule IDs to disable
-      --show-fixes             Show fix suggestions [default: true]
-      --error-on-warnings      Exit 1 on warnings (for CI)
-  -q, --quiet                  Only show files with diagnostics
-      --stats                  Show per-rule hit counts
-      --max-diagnostics <N>    Limit output (0 = unlimited) [default: 0]
-```
+Guest-only API bans need no custom lints: they are path deny-lists, which stock Clippy's configurable `disallowed_methods` / `disallowed_types` enforce on stable. Consumers apply the canonical config below via `CLIPPY_CONF_DIR` on a `--target wasm32-wasip2` clippy invocation only. `std::fs` / `std::thread` / `std::net` / `std::process` stay the compiler's problem; crate dependencies stay `cargo deny`'s.
 
-## Output Formats
-
-**Pretty** (default) -- colored output with source snippets and fix suggestions.
-
-**JSON** -- structured array for tooling integration:
-
-```json
-[
-  {
-    "file": "src/handler.rs",
-    "line": 10,
-    "column": 5,
-    "severity": "error",
-    "rule_id": "error_panic_macro",
-    "message": "Never use panic! in WASM handlers",
-    "fix": "Return Err(server_error!(\"reason\")) instead"
-  }
+```toml
+# clippy-wasm.toml — wasm32 guest deny-list. Apply with:
+#   CLIPPY_CONF_DIR=<dir> cargo clippy --target wasm32-wasip2 -- -D warnings
+disallowed-methods = [
+  { path = "std::env::var", reason = "guests receive configuration through the provider seam" },
+  { path = "std::env::vars", reason = "guests receive configuration through the provider seam" },
+  { path = "std::env::var_os", reason = "guests receive configuration through the provider seam" },
+  { path = "std::time::SystemTime::now", reason = "wall-clock time is a host capability" },
+  { path = "std::time::Instant::now", reason = "monotonic time is a host capability" },
+]
+disallowed-types = [
+  { path = "std::sync::OnceLock", reason = "global state does not survive the instance-per-request model" },
+  { path = "std::sync::LazyLock", reason = "global state does not survive the instance-per-request model" },
+  { path = "tokio::runtime::Runtime", reason = "host async runtimes cannot run in the sandbox" },
+  { path = "reqwest::Client", reason = "HTTP egress goes through the provider seam" },
+  { path = "reqwest::blocking::Client", reason = "HTTP egress goes through the provider seam" },
 ]
 ```
 
-**Compact** -- one line per diagnostic: `src/handler.rs:10:5: E [error_panic_macro] Never use panic!...`
+## IDE integration (opt-in)
 
-**GitHub** -- native GitHub Actions annotation format (`::error file=...`).
+rust-analyzer can run the house lints on save; it is slower than stock clippy-on-save, and CI remains the gate:
 
-## CI Integration
-
-### GitHub Actions
-
-```yaml
-- name: Omnia Lint
-  run: |
-    cargo install --path lints
-    omnia-lint src/ --format github --error-on-warnings
+```json
+{ "rust-analyzer.check.overrideCommand": ["cargo", "dylint", "--all", "--workspace", "--", "--message-format=json"] }
 ```
 
-### Pre-commit Hook
+## Toolchain
+
+`rust-toolchain.toml` pins the one nightly this repository builds with; it moves together with the `clippy_utils` rev in `Cargo.toml`, both taken from the Dylint release we track. Consumers do not install it by hand — Dylint resolves it from this repository when building the libraries.
+
+## Development
 
 ```bash
-#!/bin/bash
-omnia-lint src/ --severity warning --quiet
+cargo make check   # fmt, clippy, tests (including UI tests)
+cargo make ci      # the full gate: fmt --check, clippy, tests, cargo deny
+cargo test -p augentic_style   # one library's UI suite
+cargo dylint list --path . --pattern 'augentic_*'   # the libraries and lints Dylint can see
 ```
 
-## Library API
-
-```rust
-use omnia_lint::{Linter, LintConfig, RuleSeverity};
-
-let config = LintConfig {
-    min_severity: RuleSeverity::Warning,
-    ..Default::default()
-};
-
-let linter = Linter::new(config);
-let diagnostics = linter.lint_file("src/handler.rs").unwrap();
-
-for diag in &diagnostics {
-    println!("{}", diag);
-}
-```
-
-Or lint a string directly:
-
-```rust
-let diagnostics = linter.lint_str(source_code, "handler.rs");
-```
-
-## Exit Codes
-
-| Code | Meaning |
-|------|---------|
-| 0 | No errors found |
-| 1 | Errors found, or warnings found with `--error-on-warnings` |
-
-## Architecture
-
-```
-src/
-  main.rs          CLI entry point (clap, rayon parallel linting)
-  lib.rs           Linter API, LintConfig, filtering
-  diagnostics.rs   DiagnosticsEngine: orchestrates rules, constraints, semantic analysis
-  rules.rs         51 regex-based rules defined via rule! macro
-  constraints.rs   Forbidden crates and patterns
-  semantic.rs      syn-based AST analysis (Handler bounds, transitive traits)
-  config.rs        Cargo.toml [lints.omnia] discovery and parsing
-  output.rs        Pretty, JSON, Compact, GitHub formatters
-```
-
-## Contributing
-
-1. **Add a rule**: use the `rule!` macro in `src/rules.rs`
-2. **Add a forbidden pattern**: add to `forbidden_patterns()` in `src/constraints.rs`
-3. **Extend semantic analysis**: modify the `syn` visitors in `src/semantic.rs`
-4. **Run tests**: `cargo test` (56 tests across all modules)
-5. **Check style**: `cargo clippy`
-
-## License
-
-MIT
+UI fixtures live in each library's `ui/` directory with committed `.stderr` files.

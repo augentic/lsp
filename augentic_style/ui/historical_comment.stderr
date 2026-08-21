@@ -1,0 +1,19 @@
+error: comment contains historical phrase `Phase `
+  --> $DIR/historical_comment.rs:2:5
+   |
+LL |     // Phase 3 renamed this seam.
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: archaeology belongs in git history; delete the comment
+   = note: `#[deny(historical_comment)]` on by default
+
+error: comment contains historical phrase `formerly`
+  --> $DIR/historical_comment.rs:6:1
+   |
+LL | /// This function formerly returned a boxed error.
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: archaeology belongs in git history; delete the comment
+
+error: aborting due to 2 previous errors
+

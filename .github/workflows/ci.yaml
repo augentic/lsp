@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # rustup resolves the pinned nightly (and components) from
+      # rust-toolchain.toml on first cargo invocation.
+      - uses: Swatinem/rust-cache@v2
+      - name: Install dylint tools
+        run: cargo install cargo-dylint dylint-link
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --workspace
+      - name: Lint discovery
+        run: cargo dylint list --path . --pattern 'augentic_*'
+      - name: Deny
+        uses: EmbarkStudios/cargo-deny-action@v2

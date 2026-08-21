@@ -1,0 +1,17 @@
+error: item doc (`///`) overview runs 9 prose lines (cap 8)
+  --> $DIR/item_doc_overview.rs:1:1
+   |
+LL | / /// Overview line one.
+LL | | /// Overview line two.
+LL | | /// Overview line three.
+LL | | /// Overview line four.
+...  |
+LL | | /// Overview line eight.
+LL | | /// Overview line nine is one over the default cap of eight.
+   | |____________________________________________________________^
+   |
+   = help: lead with a short overview; move depth under `#` headings
+   = note: `#[deny(item_doc_overview)]` on by default
+
+error: aborting due to 1 previous error
+
